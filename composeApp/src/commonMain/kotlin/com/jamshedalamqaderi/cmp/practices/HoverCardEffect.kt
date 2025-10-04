@@ -1,24 +1,8 @@
 package com.jamshedalamqaderi.cmp.practices
 
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.VectorConverter
-import androidx.compose.animation.core.VisibilityThreshold
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Code
@@ -26,14 +10,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.InputChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,6 +19,7 @@ import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -61,6 +39,7 @@ const val VIEW_HEIGHT = 200
 @Composable
 fun HoverCardEffect() {
     val scope = rememberCoroutineScope()
+    val density = LocalDensity.current
     var hovered by remember { mutableStateOf(false) }
     var mousePosition by remember { mutableStateOf(IntOffset.Zero) }
     val circleOffset = remember {
@@ -75,7 +54,6 @@ fun HoverCardEffect() {
     val backgroundShadowOffset by animateDpAsState(if (hovered) 20.dp else 0.dp)
     var mousePressed by remember { mutableStateOf(false) }
     var mouseReleased by remember { mutableStateOf(false) }
-
     Box(Modifier.wrapContentSize()) {
         if (backgroundShadowOffset.value > 0f) {
             Box(
@@ -162,17 +140,19 @@ fun HoverCardEffect() {
                         scope.launch {
                             listOf(
                                 async { circleSize.animateTo(IntSize(INNER_CIRCLE_SIZE, INNER_CIRCLE_SIZE)) },
-                                async { circleCornerRoundPercent.animateTo(50f) }
+                                async { circleCornerRoundPercent.animateTo(100f) }
                             ).awaitAll()
                         }
                     }
                     snapshotFlow {
                         mousePosition to circleSize.value
                     }.collectLatest {
+                        val circleWidthInPx = with(density) { circleSize.value.width.dp.toPx() }.toInt()
+                        val circleHeightInPx = with(density) { circleSize.value.height.dp.toPx() }.toInt()
                         circleOffset.animateTo(
                             IntOffset(
-                                x = (it.first.x - it.second.width / 2),
-                                y = (it.first.y - it.second.height / 2),
+                                x = (it.first.x - (circleWidthInPx / 2)),
+                                y = (it.first.y - (circleHeightInPx / 2)),
                             ),
                             tween(0)
                         )
@@ -180,7 +160,9 @@ fun HoverCardEffect() {
                 }
                 Box(
                     Modifier
-                        .offset { circleOffset.value }
+                        .offset {
+                            circleOffset.value
+                        }
                         .size(circleSize.value.width.dp, circleSize.value.height.dp)
                         .background(
                             greenColor,
